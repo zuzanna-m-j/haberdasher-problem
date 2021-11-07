@@ -1,3 +1,8 @@
+import datetime
+
+nc = 45
+file = str(datetime.datetime.now()) + '-' + str(nc) + '-squares'
+
 import hoomd
 import hoomd.hpmc
 import numpy as np
@@ -16,12 +21,13 @@ phi_init = 0.4
 phi_fin = 0.3
 
 ## thermalization parameters for MC randomization
-therm_step = 2000
+therm_step = 1e5
 seed = random.randint(1,1e7)
 
-
-
-file = "Frenkel_Ladd_Squares_vlarge"
+with open(file + '.config','w') as fin:
+    fin.write(file)
+    fin.write(str(seed))
+    fin.write(str(nc))
 
 vAs = [(-0.21799013664766403, -0.5023571793344106),(0.43806861572454686, 0.25235264134888885),(-0.21996612497820883, 0.2506258175372971)]
 vBs = [(-0.5845343621823524, -0.12771177916537713),(0.4002733778408708, -0.30136003049648535),(0.3889689778694574, 0.26161490951675265),(-0.2689354095542138, 0.24840434931275862)]
@@ -93,7 +99,7 @@ uc = hoomd.lattice.unitcell(N = 4,
 #                             position = positions,
 #                             type_name = ['Au', 'Bu', 'Cu', 'Du', 'Ad', 'Bd', 'Cd', 'Dd']);
 
-replicate_n = 80
+replicate_n = 45
 
 system = hoomd.init.create_lattice(unitcell=uc, n=replicate_n)
 
@@ -126,7 +132,7 @@ for i in range(len(system.particles)):
 q0 = [(1, 0, 0, 0)] * len(system.particles)
 
 gsd.dump_shape(mc)
-log = hoomd.analyze.log(filename="test_HS.out", quantities=['lx','ly','lz','volume',"hpmc_overlap_count"], period=10)
+log = hoomd.analyze.log(filename= file + '.log', quantities=['lx','ly','lz','volume',"hpmc_overlap_count"], period=10)
 
 # snapshot = system.take_snapshot(particles=True)
 # r0 = snapshot.particles.position
@@ -134,16 +140,14 @@ log = hoomd.analyze.log(filename="test_HS.out", quantities=['lx','ly','lz','volu
 
 hoomd.run(therm_step)
 
-fl_filename="frenkel_ladd_squares_dense_sampling_vlarge.out"
 fl = hoomd.hpmc.field.frenkel_ladd_energy(mc=mc, ln_gamma=0.0, q_factor=10.0, r0=r0, q0=q0, drift_period=1)
-log_fl = hoomd.analyze.log(filename=fl_filename,quantities=["lattice_energy","lattice_translational_spring_constant","lattice_energy_pp_avg","lattice_energy_pp_sigma","lattice_num_samples"],period=1)
-
-ks_step = 1000
+log_fl = hoomd.analyze.log(filename= file + '.fl',quantities=["lattice_energy","lattice_translational_spring_constant","lattice_energy_pp_avg","lattice_energy_pp_sigma","lattice_num_samples"],period=1)
+ks_step = 1e5
 lambda_max = 1500
-ks = np.logspace(np.log10(0.00001),np.log10(lambda_max), 200);
+ks = np.logspace(np.log10(0.00001),np.log10(lambda_max), 200)
 for k in ks:
-    fl.set_params(ln_gamma=np.log(k), q_factor=0.0);
-    fl.reset_statistics();
+    fl.set_params(ln_gamma=np.log(k), q_factor=0.0)
+    fl.reset_statistics()
     hoomd.run(ks_step)
 
 ## calculating volume every 100 time steps

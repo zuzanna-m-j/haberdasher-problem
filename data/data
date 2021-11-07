@@ -1,1 +1,5 @@
+Configuration:
 
+-------------------
+Triangles: 35x35: 8 particles per unit cell
+Squares: 45x45: 4 particles per unit cell
