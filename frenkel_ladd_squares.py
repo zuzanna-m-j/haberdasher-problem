@@ -99,9 +99,8 @@ uc = hoomd.lattice.unitcell(N = 4,
 #                             position = positions,
 #                             type_name = ['Au', 'Bu', 'Cu', 'Du', 'Ad', 'Bd', 'Cd', 'Dd']);
 
-replicate_n = 45
 
-system = hoomd.init.create_lattice(unitcell=uc, n=replicate_n)
+system = hoomd.init.create_lattice(unitcell=uc, n=nc)
 
 #defining monte carlo simulation
 mc = hoomd.hpmc.integrate.convex_polygon(d=0.1, a=0.1, seed=seed)
