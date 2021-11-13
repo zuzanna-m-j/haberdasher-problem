@@ -1,7 +1,4 @@
 import datetime
-nc = 10
-file = str(datetime.datetime.now()) + '-' + str(nc) + '-triangles'
-
 import hoomd
 import hoomd.hpmc
 import numpy as np
@@ -13,6 +10,16 @@ import math
 
 import random
 
+
+name = 'pentagons'
+
+seed = random.randint(1,1e7)
+
+nc = 2
+file = str(datetime.datetime.now()) + '-' + str(nc) + '--' + name + '--' + str(seed)
+
+
+
 # initial packing fraction of system = N*vol/V
 phi_init = 0.4
 
@@ -20,8 +27,8 @@ phi_init = 0.4
 phi_fin = 0.3
 
 ## thermalization parameters for MC randomization
-therm_step = 1e5
-seed = random.randint(1,1e7)
+therm_step = 100
+
 
 
 with open(file + '.config','w') as fin:
@@ -81,7 +88,8 @@ hoomd.context.initialize("--mode=cpu")
 
 
 sx = 1.9070982572923945/2 + 0.15
-sy = 1.7620793290096557
+ux = 1.9070982572923945/2 + 0.15
+sy = 1.7620793290096557 + 0.075
 
 # x: 1.9070982572923945
 # y: 1.7620793290096557
@@ -95,13 +103,23 @@ positions.append((-0.027 + sx , 0.716, 0))
 positions.append((-0.552 + sx, 0.511, 0))
 positions.append((0.541 + sx , 0.572, 0))
 positions.append((0.024 + sx, -0.108, 0))
-uc = hoomd.lattice.unitcell(N = 8,
+
+positions.append((0.027 + ux, -0.716 + sy, 0))
+positions.append((0.552 + ux, -0.511 + sy, 0))
+positions.append((-0.548 + ux, -0.536 + sy,0))
+positions.append((-0.015 + ux, 0.139 + sy, 0))
+positions.append((-0.027 + sx + ux , 0.716 + sy, 0))
+positions.append((-0.552 + sx + ux, 0.511 + sy, 0))
+positions.append((0.541 + sx + ux, 0.572 + sy, 0))
+positions.append((0.024 + sx + ux, -0.108 + sy, 0))
+
+uc = hoomd.lattice.unitcell(N = 16,
                             a1 = [2.2,0,0],
-                            a2 = [0,1.8,0],
+                            a2 = [0,3.67,0],
                             a3 = [0,0,1.0],
                             dimensions = 2,
                             position = positions,
-                            type_name = ['Au', 'Bu', 'Cu', 'Du', 'Ad', 'Bd', 'Cd', 'Dd']);
+                            type_name = ['Au', 'Bu', 'Cu', 'Du', 'Ad', 'Bd', 'Cd', 'Dd','Au', 'Bu', 'Cu', 'Du', 'Ad', 'Bd', 'Cd', 'Dd']);
 
 
 system = hoomd.init.create_lattice(unitcell=uc, n=nc)
