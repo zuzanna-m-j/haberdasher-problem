@@ -1,6 +1,6 @@
 import datetime
 nc = 10
-file = str(datetime.datetime.now()) + '-' + str(nc) + '-triangles'
+file = str(datetime.datetime.now()) + '-' + str(nc) + '-reg_triangles'
 
 import hoomd
 import hoomd.hpmc
@@ -12,7 +12,7 @@ import math
 #import compress_helper_2d
 
 import random
-
+mc_steps = 1e5
 # initial packing fraction of system = N*vol/V
 phi_init = 0.4
 
@@ -130,31 +130,32 @@ gsd = hoomd.dump.gsd(file + ".gsd",
                    overwrite=True,
                    dynamic=['momentum'])
 
-r0 = [ ]
-for i in range(len(system.particles)):
-    p = system.particles.pdata.getPosition(i)
-    r0.append([p.x,p.y,p.z])
-q0 = [(1, 0, 0, 0)] * len(system.particles)
+# r0 = [ ]
+# for i in range(len(system.particles)):
+#     p = system.particles.pdata.getPosition(i)
+#     r0.append([p.x,p.y,p.z])
+# q0 = [(1, 0, 0, 0)] * len(system.particles)
 
 gsd.dump_shape(mc)
-log = hoomd.analyze.log(filename=file + ".log", quantities=['lx','ly','lz','volume',"hpmc_overlap_count"], period=10)
+# log = hoomd.analyze.log(filename=file + ".log", quantities=['lx','ly','lz','volume',"hpmc_overlap_count"], period=10)
 
 # snapshot = system.take_snapshot(particles=True)
 # r0 = snapshot.particles.position
 # q0 = snapshot.particles.orientation
 
 hoomd.run(therm_step)
+hoomd.run(mc_steps)
+#
+# fl = hoomd.hpmc.field.frenkel_ladd_energy(mc=mc, ln_gamma=0.0, q_factor=10.0, r0=r0, q0=q0, drift_period=1)
+# log_fl = hoomd.analyze.log(filename= file + '.fl',quantities=["lattice_energy","lattice_translational_spring_constant","lattice_energy_pp_avg","lattice_energy_pp_sigma","lattice_num_samples"],period=1)
 
-fl = hoomd.hpmc.field.frenkel_ladd_energy(mc=mc, ln_gamma=0.0, q_factor=10.0, r0=r0, q0=q0, drift_period=1)
-log_fl = hoomd.analyze.log(filename= file + '.fl',quantities=["lattice_energy","lattice_translational_spring_constant","lattice_energy_pp_avg","lattice_energy_pp_sigma","lattice_num_samples"],period=1)
-
-ks_step = 1000
-lambda_max = 1500
-ks = np.logspace(np.log10(0.00001),np.log10(lambda_max), 200);
-for k in ks:
-    fl.set_params(ln_gamma=np.log(k), q_factor=0.0);
-    fl.reset_statistics();
-    hoomd.run(ks_step)
+# ks_step = 1e5
+# lambda_max = 1500
+# ks = np.logspace(np.log10(0.00001),np.log10(lambda_max), 200);
+# for k in ks:
+#     fl.set_params(ln_gamma=np.log(k), q_factor=0.0);
+#     fl.reset_statistics();
+#     hoomd.run(ks_step)
 
 ## calculating volume every 100 time steps
 #hoomd.analyze.log(filename=file + '.txt', quantities=['volume', 'N'], period=10, overwrite=True)
