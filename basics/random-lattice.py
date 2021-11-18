@@ -1,12 +1,15 @@
 import datetime
 N = 400
-nc = 40
-file = str(datetime.datetime.now()) + '-' + str(nc) + '-reg_squares'
+nc = 10
+file = 'lattice_pressure'
+#file = str(datetime.datetime.now()) + '-' + str(nc) + '-reg_squares'
 
 import hoomd
 import hoomd.hpmc
 import numpy as np
 from hoomd import dem
+import hoomd.data
+import compress_helper_2d
 
 import math
 
@@ -17,17 +20,17 @@ import random
 # initial packing fraction of system = N*vol/V
 
 # final packing fraction of system
-phi_fin = 0.9
+p_frac_init = 0.3
+p_frac_final = 0.88
 
-## thermalization parameters for MC randomization
-therm_step = 1e5
+therm_step = 1e4
 mc_steps = 1e6
 seed = random.randint(1,1e7)
 
-with open(file + '.config','w') as fin:
-    fin.write(file)
-    fin.write(str(seed))
-    fin.write(str(nc))
+# with open(file + '.config','w') as fin:
+#     fin.write(file)
+#     fin.write(str(seed))
+#     fin.write(str(nc))
 
 vAs = [(-0.21799013664766403, -0.5023571793344106),(0.43806861572454686, 0.25235264134888885),(-0.21996612497820883, 0.2506258175372971)]
 vBs = [(-0.5845343621823524, -0.12771177916537713),(0.4002733778408708, -0.30136003049648535),(0.3889689778694574, 0.26161490951675265),(-0.2689354095542138, 0.24840434931275862)]
@@ -45,14 +48,36 @@ vBd = [(-0.4740585897588976, 0.36545668411237353),(0.02594335361558253, -0.50056
 vCd = [(-0.014941021565904156, -0.5570686822378279),(0.4850585897588976, 0.30895694594822487),(-0.023956643673533673, 0.30895671750045606),(-0.4479539458367474, -0.06157649329169301)]
 vDd = [(-0.023414729954361082, -0.7730399973602091),(0.4841230561755986, 0.08858950286033201),(0.055450439720314625, 0.5878414330454843),(-0.5158388727304595, 0.09731536891911975)]
 
-# defining area of vertices
-area1 = hoomd.dem.utils.area(vertices=vAu, factor=1.0)
-area2 = hoomd.dem.utils.area(vertices=vBu, factor=1.0)
-area3 = hoomd.dem.utils.area(vertices=vCu, factor=1.0)
-area4 = hoomd.dem.utils.area(vertices=vDu, factor=1.0)
 
-######
+area1 = hoomd.dem.utils.area(vertices=vAs, factor=1.0)
+area2 = hoomd.dem.utils.area(vertices=vBs, factor=1.0)
+area3 = hoomd.dem.utils.area(vertices=vCs, factor=1.0)
+area4 = hoomd.dem.utils.area(vertices=vDs, factor=1.0)
+
+
 hoomd.context.initialize("--mode=cpu")
+
+unit_cell = hoomd.lattice.unitcell(N = 4,
+                            a1 = [100.0,0,0],
+                            a2 = [0,100.0,0],
+                            a3 = [0,0,1.0],
+                            dimensions = 2,
+                            position = [(0,0,0),(8,0,0),(8,8,0),(12,12,0)],
+                            type_name = ['As', 'Bs', 'Cs', 'Ds']);
+
+
+
+
+# with open('pos.npy', 'rb') as f:
+#     pos = np.load(f)
+#     pos = list(pos[::4])
+# typelist = [0,1,2,3] * int(N/4)
+# random.shuffle(typelist)
+# snapshot = hoomd.data.make_snapshot(N=N, box=hoomd.data.boxdim(L=50, dimensions=2), particle_types=['As','Bs','Cs','Ds'])
+# for i in range(N):
+#     snapshot.particles.position[i] = pos.pop(np.random.randint(len(pos)))
+#     snapshot.particles.typeid[i] = typelist.pop()
+# system = hoomd.init.read_snapshot(snapshot)
 
 #to establish phi_init, a square unit cell should have the following lattice constant:
 #a = pow(1./phi_init, 1./2.)
@@ -100,10 +125,9 @@ hoomd.context.initialize("--mode=cpu")
 #                             type_name = ['Au', 'Bu', 'Cu', 'Du', 'Ad', 'Bd', 'Cd', 'Dd']);
 
 
-system = hoomd.init.create_lattice(unitcell=uc, n=80)
+system = hoomd.init.create_lattice(unitcell=unit_cell, n=nc)
 
-#defining monte carlo simulation
-mc = hoomd.hpmc.integrate.convex_polygon(d=0.1, a=0.1, seed=seed)
+mc = hoomd.hpmc.integrate.convex_polygon(d=0.2, a=0.2, seed=seed)
 mc.shape_param.set('As', vertices=vAs)
 mc.shape_param.set('Bs', vertices=vBs)
 mc.shape_param.set('Cs', vertices=vCs)
@@ -118,11 +142,11 @@ mc.shape_param.set('Ds', vertices=vDs)
 # mc.shape_param.set('Cd', vertices=vCd)
 # mc.shape_param.set('Dd', vertices=vDd)
 
-# gsd = hoomd.dump.gsd(file + ".gsd",
-#                    period=10,
-#                    group=hoomd.group.all(),
-#                    overwrite=True,
-#                    dynamic=['momentum'])
+gsd = hoomd.dump.gsd(file + ".gsd",
+                   period=10,
+                   group=hoomd.group.all(),
+                   overwrite=True,
+                   dynamic=['momentum'])
 
 # r0 = [ ]
 # for i in range(len(system.particles)):
@@ -130,18 +154,18 @@ mc.shape_param.set('Ds', vertices=vDs)
 #     r0.append([p.x,p.y,p.z])
 # with open('pos.npy','wb') as posfile:
 #     np.save(posfile,r0)
+# with open('pos.npy', 'rb') as f:
+#     positions = np.load(f)
 
 # q0 = [(1, 0, 0, 0)] * len(system.particles)
 
-# gsd.dump_shape(mc)
-# log = hoomd.analyze.log(filename= file + '.log', quantities=['lx','ly','lz','volume',"hpmc_overlap_count"], period=10)
+gsd.dump_shape(mc)
 
-# snapshot = system.take_snapshot(particles=True)
-# r0 = snapshot.particles.position
-# q0 = snapshot.particles.orientation
+hoomd.run(therm_step)
 
-# hoomd.run(therm_step)
-#
+log = hoomd.analyze.log(filename = file + '.log', quantities=['lx','ly','lz','volume',"hpmc_overlap_count"], period=10)
+
+
 # fl = hoomd.hpmc.field.frenkel_ladd_energy(mc=mc, ln_gamma=0.0, q_factor=10.0, r0=r0, q0=q0, drift_period=1)
 # log_fl = hoomd.analyze.log(filename= file + '.fl',quantities=["lattice_energy","lattice_translational_spring_constant","lattice_energy_pp_avg","lattice_energy_pp_sigma","lattice_num_samples"],period=1)
 # ks_step = 1e5
@@ -153,15 +177,17 @@ mc.shape_param.set('Ds', vertices=vDs)
 # hoomd.run(mc_steps)
 
 ## calculating volume every 100 time steps
-#hoomd.analyze.log(filename=file + '.txt', quantities=['volume', 'N'], period=10, overwrite=True)
+hoomd.analyze.log(filename=file + '.vol', quantities=['volume', 'N'], period=10, overwrite=True)
 
 ### calculating pressure
-#hoomd.hpmc.analyze.sdf(mc=mc, filename=file + '.dat', xmax=0.02, dx=1e-4, navg=100, period=100, overwrite=True)
+hoomd.hpmc.analyze.sdf(mc=mc, filename=file + '.dat', xmax=0.02, dx=1e-4, navg=10, period=10, overwrite=True)
 # log = hoomd.hpmc.analyze.log(quantities=['lattice_energy'], period=1, filename='log.dat', overwrite=True);
 
 ### then compress the system
-# vol = n_sys**2*(area1 + area2 + area3 + area4)
-# compress_helper_2d.length_geom(system, mc, phi_fin, scale = 0.9995, tot_part_vol = vol)
+vol = (area1 + area2 + area3 + area4) * (nc*nc)
+
+compress_helper_2d.length_geom(system, mc, p_frac_init, scale = 0.9995, tot_part_vol = vol)
 
 ### run for a very long period of time
-# hoomd.run(100)
+hoomd.run(1e5)
+compress_helper_2d.length_geom(system, mc, p_frac_final, scale = 0.9995, tot_part_vol = vol)
