@@ -15,10 +15,8 @@ name = 'pentagons'
 
 seed = random.randint(1,1e7)
 
-nc = 2
+nc = 20
 file = str(datetime.datetime.now()) + '-' + str(nc) + '--' + name + '--' + str(seed)
-
-
 
 # initial packing fraction of system = N*vol/V
 phi_init = 0.4
@@ -27,14 +25,14 @@ phi_init = 0.4
 phi_fin = 0.3
 
 ## thermalization parameters for MC randomization
-therm_step = 100
+therm_step = 500
 
 
 
-with open(file + '.config','w') as fin:
-    fin.write(file)
-    fin.write(str(seed))
-    fin.write(str(nc))
+# with open(file + '.config','w') as fin:
+#     fin.write(file)
+#     fin.write(str(seed))
+#     fin.write(str(nc))
 
 vAs = [(-0.21799013664766403, -0.5023571793344106),(0.43806861572454686, 0.25235264134888885),(-0.21996612497820883, 0.2506258175372971)]
 vBs = [(-0.5845343621823524, -0.12771177916537713),(0.4002733778408708, -0.30136003049648535),(0.3889689778694574, 0.26161490951675265),(-0.2689354095542138, 0.24840434931275862)]
