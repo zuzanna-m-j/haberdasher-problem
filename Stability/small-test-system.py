@@ -76,9 +76,9 @@ def length_geom(system, mc, phi, scale = 0.99, tot_part_vol = 1.0):
         assert(overlaps == 0)
         if hoomd.comm.get_rank() == 0: print("Compression finished! Current density calculated to be {}.".format(tot_part_vol/system.box.get_volume()))
 fname = "tests"
-a1 = 10
-a2 = 10
-n_cell = 10
+a1 = 15
+a2 = 15
+n_cell = 20
 seed = 12345
 
 

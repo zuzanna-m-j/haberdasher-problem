@@ -1,4 +1,4 @@
-n_cell = 10
+n_cell = 20
 import math
 
 import numpy as np
