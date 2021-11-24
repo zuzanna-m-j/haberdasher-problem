@@ -10,7 +10,7 @@ from hoomd import deprecated
 
 
 
-navg = 100
+navg = 400
 sdfperiod = 100
 volperiod = sdfperiod
 
@@ -138,8 +138,6 @@ sc.disable()
 
 # print(hoomd.get_step())
 # log = hoomd.analyze.log(filename=None, quantities=['volume', 'N', 'potential_energy'], period=None)
-
-length_geom(system, mc, pf_final, scale = 0.9995, tot_part_vol = particle_volume)
-
-hoomd.run(1000)
+while hoomd.get_step() < 1e7:
+    length_geom(system, mc, pf_final, scale = 0.9995, tot_part_vol = particle_volume)
 print("Done!")

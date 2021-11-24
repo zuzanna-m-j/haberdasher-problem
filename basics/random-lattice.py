@@ -123,7 +123,7 @@ unit_cell = hoomd.lattice.unitcell(N = 4,
 #                             dimensions = 2,
 #                             position = positions,
 #                             type_name = ['Au', 'Bu', 'Cu', 'Du', 'Ad', 'Bd', 'Cd', 'Dd']);
-
+ 
 
 system = hoomd.init.create_lattice(unitcell=unit_cell, n=nc)
 
