@@ -1,36 +1,14 @@
-import hoomd
-import numpy as np
-import sys
+F_pressure = True
+p_start = 45.0
 
-import datetime
 import hoomd
 import hoomd.hpmc
 import numpy as np
-from hoomd import dem
-
-import math
-
-#import compress_helper_2d
-
 import random
 
 
-name = 'data'
-
+file = 'hexagonal-lattice'
 seed = random.randint(1,1e7)
-
-nc = 20
-#file = str(datetime.datetime.now()) + '-' + str(nc) + '--' + name + '--' + str(seed)
-file = name
-# initial packing fraction of system = N*vol/V
-phi_init = 0.4
-
-# final packing fraction of system
-phi_fin = 0.3
-
-## thermalization parameters for MC randomization
-therm_step = 1000
-
 
 vAs = [(-0.21799013664766403, -0.5023571793344106),(0.43806861572454686, 0.25235264134888885),(-0.21996612497820883, 0.2506258175372971)]
 vBs = [(-0.5845343621823524, -0.12771177916537713),(0.4002733778408708, -0.30136003049648535),(0.3889689778694574, 0.26161490951675265),(-0.2689354095542138, 0.24840434931275862)]
@@ -140,30 +118,30 @@ mc.shape_param.set('Cd', vertices=vCd)
 mc.shape_param.set('Dd', vertices=vDd)
 
 gsd = hoomd.dump.gsd(file + ".gsd",
-                   period=10,
+                   period=100,
                    group=hoomd.group.all(),
                    overwrite=True,)
 
 gsd.dump_shape(mc)
-hoomd.analyze.log(filename=file + '.txt', quantities=['volume', 'N'], period=100, overwrite=True)
-hoomd.hpmc.analyze.sdf(mc=mc, filename=file + '.dat', xmax=0.02, dx=1e-4, navg=100, period=100, overwrite=True)
-hoomd.run(1000)
-with open("pressure-volume.log", 'w') as pv:
-    pv.writelines("Volume:    Pressure: \n")
-    betaP = np.arange(10.0, 0.01, -1.0)
-    boxMC = hoomd.hpmc.update.boxmc(mc, betaP=betaP[0], seed=9876)
-    boxMC.volume(delta=system.box.get_volume()*0.1, weight=1.0)
-    hoomd.run(1e5)
+hoomd.analyze.log(filename=file + '.vol', quantities=['volume', 'N'], period=100, overwrite=True)
+hoomd.hpmc.analyze.sdf(mc=mc, filename=file + '.sdf', xmax=0.01, dx=1e-5, navg=100, period=100, overwrite=True)
+move_tuner = hoomd.hpmc.util.tune(mc, tunables=['d', 'a'], target=0.2, gamma=0.5)
+for _ in range(100):
+    hoomd.run(1e3)
+    move_tuner.update()
 
-    p = betaP[0]
-    vol = system.box.get_volume()
-    pv.writelines(str(vol) + '   ' + str(p) + '\n')
+if F_pressure == True:
+    boxMC = hoomd.hpmc.update.boxmc(mc, betaP=p_start, seed=12345)
+    boxMC.volume(delta=1.0, weight=1.0)
+    v_tuner = hoomd.hpmc.util.tune_npt(boxMC, tunables=['dV'], target=0.3, gamma=3.0)
+    for _ in range(100):
+        hoomd.run(1000)
+        v_tuner.update()
 
-    for i in range(1,len(betaP)):
-        p = betaP[i]
-        boxMC.set_betap(p)
-        hoomd.run(1e5)
-        vol = system.box.get_volume()
-        pv.writelines(str(vol) + '   ' + str(p) + '\n')
-
-print("done!")
+        betaP = np.arange(p_start, 1.0, -1.0)
+        for i in range(1,len(betaP)):
+            p = betaP[i]
+            boxMC.set_betap(p)
+            for _ in range(100):
+                hoomd.run(1000)
+                v_tuner.update()

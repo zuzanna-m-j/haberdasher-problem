@@ -114,10 +114,6 @@ x = np.arange(len(y))
 
 fig, (ax1, ax2) = plt.subplots(2, 1)
 ax1.plot(x, y, lw = 2)
-ax2.plot(x, y, lw = 2)
-
-ax2.plot(x,x,'--')
-
 #marker: marker = '.', markersize = 5
 #ax.plot(sdf_t[500], betaP[500], 'ro', label = 'compression stopped; t =' + str(sdf_t[46]))
 #ax.plot(sdf_t[1500], betaP[1500], 'go', label = 'equilibrium; t =' + str(sdf_t[2500]))
