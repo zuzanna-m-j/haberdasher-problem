@@ -138,7 +138,7 @@ if F_pressure == True:
         hoomd.run(1000)
         v_tuner.update()
 
-        betaP = np.arange(p_start, 1.0, -1.0)
+        betaP = np.arange(p_start, 0.1, -0.1)
         for i in range(1,len(betaP)):
             p = betaP[i]
             boxMC.set_betap(p)
